@@ -20,6 +20,10 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
         isNew: newsData.isNew !== undefined ? newsData.isNew : true,
         fullDescription: newsData.fullDescription || ''
       })
+      // Mettre à jour l'éditeur UNIQUEMENT lors du chargement initial
+      if (editorRef.current && newsData.fullDescription) {
+        editorRef.current.innerHTML = newsData.fullDescription
+      }
     }
   }, [newsData])
 
@@ -248,7 +252,7 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
             contentEditable
             className="wysiwyg-editor"
             onInput={handleEditorInput}
-            dangerouslySetInnerHTML={{ __html: formData.fullDescription }}
+            suppressContentEditableWarning
             data-placeholder="Commencez à écrire votre contenu ici..."
           />
 
