@@ -25,6 +25,7 @@ db.serialize(() => {
       isNew INTEGER DEFAULT 1,
       fullDescription TEXT NOT NULL,
       headerImage TEXT,
+      galleryImages TEXT,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `, (err) => {
@@ -36,6 +37,12 @@ db.serialize(() => {
       db.run(`ALTER TABLE news ADD COLUMN headerImage TEXT`, (alterErr) => {
         if (alterErr && !alterErr.message.includes('duplicate column')) {
           console.error('❌ Erreur lors de l\'ajout de la colonne headerImage:', alterErr.message)
+        }
+      })
+      // Ajouter la colonne galleryImages si elle n'existe pas (migration)
+      db.run(`ALTER TABLE news ADD COLUMN galleryImages TEXT`, (alterErr) => {
+        if (alterErr && !alterErr.message.includes('duplicate column')) {
+          console.error('❌ Erreur lors de l\'ajout de la colonne galleryImages:', alterErr.message)
         }
       })
     }
@@ -50,10 +57,11 @@ const dbHelpers = {
       db.all('SELECT * FROM news ORDER BY createdAt DESC', [], (err, rows) => {
         if (err) reject(err)
         else {
-          // Convertir isNew de 0/1 à boolean
+          // Convertir isNew de 0/1 à boolean et galleryImages de JSON à tableau
           const news = rows.map(row => ({
             ...row,
-            isNew: row.isNew === 1
+            isNew: row.isNew === 1,
+            galleryImages: row.galleryImages ? JSON.parse(row.galleryImages) : []
           }))
           resolve(news)
         }
@@ -69,7 +77,8 @@ const dbHelpers = {
         else if (row) {
           resolve({
             ...row,
-            isNew: row.isNew === 1
+            isNew: row.isNew === 1,
+            galleryImages: row.galleryImages ? JSON.parse(row.galleryImages) : []
           })
         } else {
           resolve(null)
@@ -81,12 +90,12 @@ const dbHelpers = {
   // Créer une nouvelle actualité
   createNews: (newsData) => {
     return new Promise((resolve, reject) => {
-      const { date, title, description, type, isNew, fullDescription, headerImage } = newsData
+      const { date, title, description, type, isNew, fullDescription, headerImage, galleryImages } = newsData
 
       db.run(
-        `INSERT INTO news (date, title, description, type, isNew, fullDescription, headerImage)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null],
+        `INSERT INTO news (date, title, description, type, isNew, fullDescription, headerImage, galleryImages)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null, galleryImages ? JSON.stringify(galleryImages) : null],
         function(err) {
           if (err) reject(err)
           else resolve({ id: this.lastID, ...newsData })
@@ -98,13 +107,13 @@ const dbHelpers = {
   // Mettre à jour une actualité
   updateNews: (id, newsData) => {
     return new Promise((resolve, reject) => {
-      const { date, title, description, type, isNew, fullDescription, headerImage } = newsData
+      const { date, title, description, type, isNew, fullDescription, headerImage, galleryImages } = newsData
 
       db.run(
         `UPDATE news
-         SET date = ?, title = ?, description = ?, type = ?, isNew = ?, fullDescription = ?, headerImage = ?
+         SET date = ?, title = ?, description = ?, type = ?, isNew = ?, fullDescription = ?, headerImage = ?, galleryImages = ?
          WHERE id = ?`,
-        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null, id],
+        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null, galleryImages ? JSON.stringify(galleryImages) : null, id],
         function(err) {
           if (err) reject(err)
           else if (this.changes === 0) reject(new Error('Actualité non trouvée'))

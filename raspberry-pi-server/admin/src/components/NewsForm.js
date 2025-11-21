@@ -8,11 +8,15 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
     type: 'info',
     isNew: true,
     fullDescription: '',
-    headerImage: ''
+    headerImage: '',
+    galleryImages: []
   })
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingGallery, setUploadingGallery] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [dragActiveGallery, setDragActiveGallery] = useState(false)
   const fileInputRef = useRef(null)
+  const galleryInputRef = useRef(null)
   const editorRef = useRef(null)
 
   useEffect(() => {
@@ -23,7 +27,8 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
         type: newsData.type || 'info',
         isNew: newsData.isNew !== undefined ? newsData.isNew : true,
         fullDescription: newsData.fullDescription || '',
-        headerImage: newsData.headerImage || ''
+        headerImage: newsData.headerImage || '',
+        galleryImages: newsData.galleryImages || []
       })
       // Mettre à jour l'éditeur UNIQUEMENT lors du chargement initial
       if (editorRef.current && newsData.fullDescription) {
@@ -146,6 +151,125 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
     setFormData(prev => ({
       ...prev,
       headerImage: ''
+    }))
+  }
+
+  // Fonctions pour la galerie d'images
+  const uploadGalleryImage = async (file) => {
+    if (!file) return null
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Type de fichier non autorisé. Utilisez JPG, PNG, GIF ou WebP.')
+      return null
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Fichier trop volumineux. Taille maximale : 5MB')
+      return null
+    }
+
+    try {
+      const formDataUpload = new FormData()
+      formDataUpload.append('image', file)
+
+      const token = localStorage.getItem('adminToken')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataUpload
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erreur lors de l\'upload')
+      }
+
+      const result = await response.json()
+      return `${window.location.origin}${result.url}`
+    } catch (error) {
+      console.error('❌ Erreur upload galerie:', error)
+      return null
+    }
+  }
+
+  const handleGalleryFileSelect = async (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    setUploadingGallery(true)
+
+    const uploadedUrls = []
+    for (const file of files) {
+      const url = await uploadGalleryImage(file)
+      if (url) {
+        uploadedUrls.push(url)
+      }
+    }
+
+    if (uploadedUrls.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        galleryImages: [...prev.galleryImages, ...uploadedUrls]
+      }))
+      alert(`${uploadedUrls.length} image(s) ajoutée(s) à la galerie !`)
+    }
+
+    setUploadingGallery(false)
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = ''
+    }
+  }
+
+  const handleGalleryDrag = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActiveGallery(true)
+    } else if (e.type === 'dragleave') {
+      setDragActiveGallery(false)
+    }
+  }
+
+  const handleGalleryDrop = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActiveGallery(false)
+
+    const files = Array.from(e.dataTransfer.files).filter(file =>
+      file.type.startsWith('image/')
+    )
+
+    if (files.length === 0) return
+
+    setUploadingGallery(true)
+
+    const uploadedUrls = []
+    for (const file of files) {
+      const url = await uploadGalleryImage(file)
+      if (url) {
+        uploadedUrls.push(url)
+      }
+    }
+
+    if (uploadedUrls.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        galleryImages: [...prev.galleryImages, ...uploadedUrls]
+      }))
+      alert(`${uploadedUrls.length} image(s) ajoutée(s) à la galerie !`)
+    }
+
+    setUploadingGallery(false)
+  }
+
+  const removeGalleryImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      galleryImages: prev.galleryImages.filter((_, i) => i !== index)
     }))
   }
 
@@ -296,6 +420,68 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
           <small>
             <i className="fas fa-info-circle"></i>
             Optionnel - Une image sera affichée en haut de l'actualité
+          </small>
+        </div>
+
+        {/* Galerie d'images */}
+        <div className="form-group">
+          <label>
+            <i className="fas fa-images"></i>
+            Galerie d'images
+          </label>
+
+          <div
+            className={`image-upload-zone gallery-upload ${dragActiveGallery ? 'drag-active' : ''}`}
+            onDragEnter={handleGalleryDrag}
+            onDragOver={handleGalleryDrag}
+            onDragLeave={handleGalleryDrag}
+            onDrop={handleGalleryDrop}
+            onClick={() => galleryInputRef.current.click()}
+          >
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              onChange={handleGalleryFileSelect}
+              multiple
+              style={{ display: 'none' }}
+            />
+            {uploadingGallery ? (
+              <div className="upload-loading">
+                <i className="fas fa-spinner fa-spin"></i>
+                <p>Upload en cours...</p>
+              </div>
+            ) : (
+              <>
+                <i className="fas fa-images"></i>
+                <p>Glissez des images ici ou cliquez pour sélectionner</p>
+                <small>Vous pouvez sélectionner plusieurs images - Max 5MB par image</small>
+              </>
+            )}
+          </div>
+
+          {/* Affichage des images de la galerie */}
+          {formData.galleryImages.length > 0 && (
+            <div className="gallery-preview">
+              {formData.galleryImages.map((url, index) => (
+                <div key={index} className="gallery-item">
+                  <img src={url} alt={`Galerie ${index + 1}`} />
+                  <button
+                    type="button"
+                    className="btn-remove-gallery-image"
+                    onClick={() => removeGalleryImage(index)}
+                    title="Supprimer"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <small>
+            <i className="fas fa-info-circle"></i>
+            Optionnel - Ces images seront affichées dans une galerie sous le contenu
           </small>
         </div>
 
