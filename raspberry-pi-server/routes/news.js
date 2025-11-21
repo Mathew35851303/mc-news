@@ -1,7 +1,32 @@
 const express = require('express')
 const router = express.Router()
+const path = require('path')
+const fs = require('fs')
 const { dbHelpers } = require('../database')
 const { verifyToken } = require('../middleware/auth')
+
+// Fonction helper pour supprimer une image uploadée
+const deleteUploadedImage = (imageUrl) => {
+  if (!imageUrl) return
+
+  try {
+    // Extraire le nom du fichier de l'URL
+    // L'URL est de la forme: https://news.losnachoschipies.fr/uploads/news-images/filename.jpg
+    // ou /uploads/news-images/filename.jpg
+    const match = imageUrl.match(/\/uploads\/news-images\/([^/]+)$/)
+    if (match) {
+      const filename = match[1]
+      const filePath = path.join(__dirname, '..', 'uploads', 'news-images', filename)
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+        console.log(`[API] Image supprimée: ${filename}`)
+      }
+    }
+  } catch (error) {
+    console.error('[API] Erreur suppression image:', error.message)
+  }
+}
 
 // GET /api/news - Récupérer toutes les actualités (PUBLIC)
 router.get('/', async (req, res) => {
@@ -137,8 +162,28 @@ router.put('/:id', verifyToken, async (req, res) => {
 // DELETE /api/news/:id - Supprimer une actualité (PROTÉGÉ)
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
+    // Récupérer la news avant de la supprimer pour avoir les URLs des images
+    const news = await dbHelpers.getNewsById(req.params.id)
+
+    if (!news) {
+      return res.status(404).json({ error: 'Actualité non trouvée' })
+    }
+
+    // Supprimer l'image d'en-tête si elle existe
+    if (news.headerImage) {
+      deleteUploadedImage(news.headerImage)
+    }
+
+    // Supprimer les images de la galerie si elles existent
+    if (news.galleryImages && news.galleryImages.length > 0) {
+      for (const imageUrl of news.galleryImages) {
+        deleteUploadedImage(imageUrl)
+      }
+    }
+
+    // Supprimer la news de la base de données
     await dbHelpers.deleteNews(req.params.id)
-    console.log(`[API] DELETE /api/news/${req.params.id} - Actualité supprimée`)
+    console.log(`[API] DELETE /api/news/${req.params.id} - Actualité et images supprimées`)
     res.status(204).send()
 
   } catch (error) {
