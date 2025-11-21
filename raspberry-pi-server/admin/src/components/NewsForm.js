@@ -69,7 +69,10 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
       const formDataUpload = new FormData()
       formDataUpload.append('image', file)
 
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('adminToken')
+      console.log('🔑 Token récupéré:', token ? token.substring(0, 20) + '...' : 'null')
+      console.log('🔑 Token length:', token ? token.length : 0)
+      console.log('🔑 Token commence par "eyJ"?', token ? token.startsWith('eyJ') : false)
 
       console.log('📤 Envoi de l\'image au serveur...')
 
