@@ -195,6 +195,7 @@ function Dashboard({ onLogout }) {
             newsData={editingNews}
             onSubmit={editingNews ? handleUpdateNews : handleCreateNews}
             onCancel={handleCancelForm}
+            onNotification={showNotification}
           />
         )}
       </div>

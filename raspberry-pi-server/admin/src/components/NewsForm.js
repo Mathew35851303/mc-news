@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import './NewsForm.css'
 
-function NewsForm({ newsData, onSubmit, onCancel }) {
+function NewsForm({ newsData, onSubmit, onCancel, onNotification }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -60,13 +60,13 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
     // Vérifier le type de fichier
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      alert('Type de fichier non autorisé. Utilisez JPG, PNG, GIF ou WebP.')
+      onNotification?.('❌ Type de fichier non autorisé. Utilisez JPG, PNG, GIF ou WebP.', 'error')
       return
     }
 
     // Vérifier la taille (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Fichier trop volumineux. Taille maximale : 5MB')
+      onNotification?.('❌ Fichier trop volumineux. Taille maximale : 5MB', 'error')
       return
     }
 
@@ -112,11 +112,11 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
       }))
 
       console.log('✅ Image uploadée avec succès:', imageUrl)
-      alert('Image uploadée avec succès !')
+      onNotification?.('✅ Image d\'en-tête uploadée avec succès !', 'success')
 
     } catch (error) {
       console.error('❌ Erreur upload:', error)
-      alert(`Erreur lors de l'upload de l'image: ${error.message}`)
+      onNotification?.(`❌ Erreur lors de l'upload: ${error.message}`, 'error')
     } finally {
       setUploadingImage(false)
     }
@@ -162,12 +162,12 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
 
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      alert('Type de fichier non autorisé. Utilisez JPG, PNG, GIF ou WebP.')
+      onNotification?.('❌ Type de fichier non autorisé. Utilisez JPG, PNG, GIF ou WebP.', 'error')
       return null
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Fichier trop volumineux. Taille maximale : 5MB')
+      onNotification?.('❌ Fichier trop volumineux. Taille maximale : 5MB', 'error')
       return null
     }
 
@@ -194,6 +194,7 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
       return `${window.location.origin}${result.url}`
     } catch (error) {
       console.error('❌ Erreur upload galerie:', error)
+      onNotification?.(`❌ Erreur lors de l'upload: ${error.message}`, 'error')
       return null
     }
   }
@@ -217,7 +218,7 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
         ...prev,
         galleryImages: [...prev.galleryImages, ...uploadedUrls]
       }))
-      alert(`${uploadedUrls.length} image(s) ajoutée(s) à la galerie !`)
+      onNotification?.(`✅ ${uploadedUrls.length} image(s) ajoutée(s) à la galerie !`, 'success')
     }
 
     setUploadingGallery(false)
@@ -262,7 +263,7 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
         ...prev,
         galleryImages: [...prev.galleryImages, ...uploadedUrls]
       }))
-      alert(`${uploadedUrls.length} image(s) ajoutée(s) à la galerie !`)
+      onNotification?.(`✅ ${uploadedUrls.length} image(s) ajoutée(s) à la galerie !`, 'success')
     }
 
     setUploadingGallery(false)
