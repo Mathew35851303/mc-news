@@ -3,5 +3,6 @@ node_modules/
 database/*.db
 database/*.db-journal
 admin/build/
+uploads/
 .DS_Store
 *.log

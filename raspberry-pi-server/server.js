@@ -5,6 +5,7 @@ const path = require('path')
 const bcrypt = require('bcryptjs')
 const { generateToken } = require('./middleware/auth')
 const newsRoutes = require('./routes/news')
+const uploadRoutes = require('./routes/upload')
 const { dbHelpers } = require('./database')
 
 const app = express()
@@ -18,6 +19,7 @@ const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync('
 app.use(cors()) // Autoriser toutes les origines (à restreindre en production si besoin)
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'admin', 'build'))) // Servir l'interface React
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))) // Servir les images uploadées
 
 // Logger basique
 app.use((req, res, next) => {
@@ -27,6 +29,7 @@ app.use((req, res, next) => {
 
 // Routes API
 app.use('/api/news', newsRoutes)
+app.use('/api/upload', uploadRoutes)
 
 // Route de login
 app.post('/api/login', async (req, res) => {
@@ -113,6 +116,8 @@ app.listen(PORT, '0.0.0.0', () => {
   POST   /api/news          - Créer une actualité (protégé)
   PUT    /api/news/:id      - Modifier une actualité (protégé)
   DELETE /api/news/:id      - Supprimer une actualité (protégé)
+  POST   /api/upload        - Upload d'image (protégé)
+  DELETE /api/upload/:id    - Supprimer une image (protégé)
 
 🔐 Credentials par défaut:
   Username: ${ADMIN_USERNAME}

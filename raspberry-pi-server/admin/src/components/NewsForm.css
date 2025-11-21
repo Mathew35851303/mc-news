@@ -343,12 +343,71 @@
   text-decoration: underline;
 }
 
+.image-upload-zone {
+  margin-top: 10px;
+  padding: 40px 20px;
+  border: 3px dashed #e0e0e0;
+  border-radius: 12px;
+  background: #f8f9fa;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.image-upload-zone:hover {
+  border-color: #ff6b35;
+  background: #fff5f2;
+}
+
+.image-upload-zone.drag-active {
+  border-color: #ff6b35;
+  background: #fff5f2;
+  transform: scale(1.02);
+}
+
+.image-upload-zone i.fa-cloud-upload-alt {
+  font-size: 48px;
+  color: #ff6b35;
+  margin-bottom: 15px;
+}
+
+.image-upload-zone p {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 10px 0 5px;
+}
+
+.image-upload-zone small {
+  font-size: 12px;
+  color: #666;
+}
+
+.upload-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-loading i {
+  font-size: 32px;
+  color: #ff6b35;
+}
+
+.upload-loading p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
 .image-preview {
   margin-top: 15px;
   padding: 15px;
   background: #f8f9fa;
   border-radius: 8px;
   border: 2px solid #e0e0e0;
+  position: relative;
 }
 
 .image-preview img {
@@ -357,6 +416,30 @@
   border-radius: 6px;
   display: block;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-remove-image {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  background: rgba(244, 67, 54, 0.9);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-remove-image:hover {
+  background: #d32f2f;
+  transform: scale(1.1);
 }
 
 @media (max-width: 768px) {

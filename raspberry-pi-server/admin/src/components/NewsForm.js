@@ -10,6 +10,9 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
     fullDescription: '',
     headerImage: ''
   })
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
+  const fileInputRef = useRef(null)
   const editorRef = useRef(null)
 
   useEffect(() => {
@@ -41,6 +44,94 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
     setFormData(prev => ({
       ...prev,
       fullDescription: e.target.innerHTML
+    }))
+  }
+
+  const uploadImage = async (file) => {
+    if (!file) return
+
+    // Vérifier le type de fichier
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Type de fichier non autorisé. Utilisez JPG, PNG, GIF ou WebP.')
+      return
+    }
+
+    // Vérifier la taille (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Fichier trop volumineux. Taille maximale : 5MB')
+      return
+    }
+
+    setUploadingImage(true)
+
+    try {
+      const formDataUpload = new FormData()
+      formDataUpload.append('image', file)
+
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataUpload
+      })
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'upload')
+      }
+
+      const result = await response.json()
+
+      // Construire l'URL complète de l'image
+      const imageUrl = `${window.location.origin}${result.url}`
+
+      // Mettre à jour l'URL de l'image
+      setFormData(prev => ({
+        ...prev,
+        headerImage: imageUrl
+      }))
+
+    } catch (error) {
+      console.error('Erreur upload:', error)
+      alert('Erreur lors de l\'upload de l\'image')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      uploadImage(file)
+    }
+  }
+
+  const handleDrag = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      uploadImage(e.dataTransfer.files[0])
+    }
+  }
+
+  const removeImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      headerImage: ''
     }))
   }
 
@@ -142,24 +233,56 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
         <div className="form-group">
           <label>
             <i className="fas fa-image"></i>
-            Image d'en-tête (URL)
+            Image d'en-tête
           </label>
-          <input
-            type="url"
-            name="headerImage"
-            value={formData.headerImage}
-            onChange={handleChange}
-            placeholder="Ex: https://example.com/image.jpg"
-          />
-          <small>
-            <i className="fas fa-info-circle"></i>
-            Optionnel - URL d'une image qui sera affichée en haut de l'actualité
-          </small>
-          {formData.headerImage && (
+
+          {!formData.headerImage ? (
+            <div
+              className={`image-upload-zone ${dragActive ? 'drag-active' : ''}`}
+              onDragEnter={handleDrag}
+              onDragOver={handleDrag}
+              onDragLeave={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+              {uploadingImage ? (
+                <div className="upload-loading">
+                  <i className="fas fa-spinner fa-spin"></i>
+                  <p>Upload en cours...</p>
+                </div>
+              ) : (
+                <>
+                  <i className="fas fa-cloud-upload-alt"></i>
+                  <p>Glissez une image ici ou cliquez pour sélectionner</p>
+                  <small>JPG, PNG, GIF ou WebP - Max 5MB</small>
+                </>
+              )}
+            </div>
+          ) : (
             <div className="image-preview">
               <img src={formData.headerImage} alt="Aperçu" onError={(e) => e.target.style.display = 'none'} />
+              <button
+                type="button"
+                className="btn-remove-image"
+                onClick={removeImage}
+                title="Supprimer l'image"
+              >
+                <i className="fas fa-times"></i>
+              </button>
             </div>
           )}
+
+          <small>
+            <i className="fas fa-info-circle"></i>
+            Optionnel - Une image sera affichée en haut de l'actualité
+          </small>
         </div>
 
         <div className="form-group checkbox-group">
