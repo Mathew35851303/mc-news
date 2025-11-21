@@ -24,6 +24,7 @@ db.serialize(() => {
       type TEXT NOT NULL,
       isNew INTEGER DEFAULT 1,
       fullDescription TEXT NOT NULL,
+      headerImage TEXT,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `, (err) => {
@@ -31,6 +32,12 @@ db.serialize(() => {
       console.error('❌ Erreur lors de la création de la table:', err.message)
     } else {
       console.log('✅ Table news créée ou déjà existante')
+      // Ajouter la colonne headerImage si elle n'existe pas (migration)
+      db.run(`ALTER TABLE news ADD COLUMN headerImage TEXT`, (alterErr) => {
+        if (alterErr && !alterErr.message.includes('duplicate column')) {
+          console.error('❌ Erreur lors de l\'ajout de la colonne headerImage:', alterErr.message)
+        }
+      })
     }
   })
 })
@@ -74,12 +81,12 @@ const dbHelpers = {
   // Créer une nouvelle actualité
   createNews: (newsData) => {
     return new Promise((resolve, reject) => {
-      const { date, title, description, type, isNew, fullDescription } = newsData
+      const { date, title, description, type, isNew, fullDescription, headerImage } = newsData
 
       db.run(
-        `INSERT INTO news (date, title, description, type, isNew, fullDescription)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [date, title, description, type, isNew ? 1 : 0, fullDescription],
+        `INSERT INTO news (date, title, description, type, isNew, fullDescription, headerImage)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null],
         function(err) {
           if (err) reject(err)
           else resolve({ id: this.lastID, ...newsData })
@@ -91,13 +98,13 @@ const dbHelpers = {
   // Mettre à jour une actualité
   updateNews: (id, newsData) => {
     return new Promise((resolve, reject) => {
-      const { date, title, description, type, isNew, fullDescription } = newsData
+      const { date, title, description, type, isNew, fullDescription, headerImage } = newsData
 
       db.run(
         `UPDATE news
-         SET date = ?, title = ?, description = ?, type = ?, isNew = ?, fullDescription = ?
+         SET date = ?, title = ?, description = ?, type = ?, isNew = ?, fullDescription = ?, headerImage = ?
          WHERE id = ?`,
-        [date, title, description, type, isNew ? 1 : 0, fullDescription, id],
+        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null, id],
         function(err) {
           if (err) reject(err)
           else if (this.changes === 0) reject(new Error('Actualité non trouvée'))

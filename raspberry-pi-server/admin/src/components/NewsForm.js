@@ -7,7 +7,8 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
     description: '',
     type: 'info',
     isNew: true,
-    fullDescription: ''
+    fullDescription: '',
+    headerImage: ''
   })
   const editorRef = useRef(null)
 
@@ -18,7 +19,8 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
         description: newsData.description || '',
         type: newsData.type || 'info',
         isNew: newsData.isNew !== undefined ? newsData.isNew : true,
-        fullDescription: newsData.fullDescription || ''
+        fullDescription: newsData.fullDescription || '',
+        headerImage: newsData.headerImage || ''
       })
       // Mettre à jour l'éditeur UNIQUEMENT lors du chargement initial
       if (editorRef.current && newsData.fullDescription) {
@@ -135,6 +137,29 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
             required
           />
           <small>{formData.description.length}/150 caractères</small>
+        </div>
+
+        <div className="form-group">
+          <label>
+            <i className="fas fa-image"></i>
+            Image d'en-tête (URL)
+          </label>
+          <input
+            type="url"
+            name="headerImage"
+            value={formData.headerImage}
+            onChange={handleChange}
+            placeholder="Ex: https://example.com/image.jpg"
+          />
+          <small>
+            <i className="fas fa-info-circle"></i>
+            Optionnel - URL d'une image qui sera affichée en haut de l'actualité
+          </small>
+          {formData.headerImage && (
+            <div className="image-preview">
+              <img src={formData.headerImage} alt="Aperçu" onError={(e) => e.target.style.display = 'none'} />
+            </div>
+          )}
         </div>
 
         <div className="form-group checkbox-group">
