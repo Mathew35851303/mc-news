@@ -9,7 +9,8 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
     isNew: true,
     fullDescription: '',
     headerImage: '',
-    galleryImages: []
+    galleryImages: [],
+    videoUrl: ''
   })
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingGallery, setUploadingGallery] = useState(false)
@@ -28,7 +29,8 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
         isNew: newsData.isNew !== undefined ? newsData.isNew : true,
         fullDescription: newsData.fullDescription || '',
         headerImage: newsData.headerImage || '',
-        galleryImages: newsData.galleryImages || []
+        galleryImages: newsData.galleryImages || [],
+        videoUrl: newsData.videoUrl || ''
       })
       // Mettre à jour l'éditeur UNIQUEMENT lors du chargement initial
       if (editorRef.current && newsData.fullDescription) {
@@ -482,6 +484,41 @@ function NewsForm({ newsData, onSubmit, onCancel }) {
           <small>
             <i className="fas fa-info-circle"></i>
             Optionnel - Ces images seront affichées dans une galerie sous le contenu
+          </small>
+        </div>
+
+        {/* URL Vidéo */}
+        <div className="form-group">
+          <label>
+            <i className="fas fa-video"></i>
+            Vidéo (URL)
+          </label>
+          <input
+            type="url"
+            name="videoUrl"
+            value={formData.videoUrl}
+            onChange={handleChange}
+            placeholder="Ex: https://www.youtube.com/watch?v=..."
+          />
+          {formData.videoUrl && (
+            <div className="video-preview">
+              <small>
+                <i className="fas fa-check-circle" style={{ color: '#4caf50' }}></i>
+                URL vidéo configurée
+              </small>
+              <button
+                type="button"
+                className="btn-remove-video"
+                onClick={() => setFormData(prev => ({ ...prev, videoUrl: '' }))}
+                title="Supprimer la vidéo"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          )}
+          <small>
+            <i className="fas fa-info-circle"></i>
+            Optionnel - Collez un lien YouTube, Dailymotion, etc. La vidéo sera intégrée dans l'actualité
           </small>
         </div>
 

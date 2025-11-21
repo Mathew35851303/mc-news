@@ -45,6 +45,12 @@ db.serialize(() => {
           console.error('❌ Erreur lors de l\'ajout de la colonne galleryImages:', alterErr.message)
         }
       })
+      // Ajouter la colonne videoUrl si elle n'existe pas (migration)
+      db.run(`ALTER TABLE news ADD COLUMN videoUrl TEXT`, (alterErr) => {
+        if (alterErr && !alterErr.message.includes('duplicate column')) {
+          console.error('❌ Erreur lors de l\'ajout de la colonne videoUrl:', alterErr.message)
+        }
+      })
     }
   })
 })
@@ -61,7 +67,8 @@ const dbHelpers = {
           const news = rows.map(row => ({
             ...row,
             isNew: row.isNew === 1,
-            galleryImages: row.galleryImages ? JSON.parse(row.galleryImages) : []
+            galleryImages: row.galleryImages ? JSON.parse(row.galleryImages) : [],
+            videoUrl: row.videoUrl || null
           }))
           resolve(news)
         }
@@ -78,7 +85,8 @@ const dbHelpers = {
           resolve({
             ...row,
             isNew: row.isNew === 1,
-            galleryImages: row.galleryImages ? JSON.parse(row.galleryImages) : []
+            galleryImages: row.galleryImages ? JSON.parse(row.galleryImages) : [],
+            videoUrl: row.videoUrl || null
           })
         } else {
           resolve(null)
@@ -90,12 +98,12 @@ const dbHelpers = {
   // Créer une nouvelle actualité
   createNews: (newsData) => {
     return new Promise((resolve, reject) => {
-      const { date, title, description, type, isNew, fullDescription, headerImage, galleryImages } = newsData
+      const { date, title, description, type, isNew, fullDescription, headerImage, galleryImages, videoUrl } = newsData
 
       db.run(
-        `INSERT INTO news (date, title, description, type, isNew, fullDescription, headerImage, galleryImages)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null, galleryImages ? JSON.stringify(galleryImages) : null],
+        `INSERT INTO news (date, title, description, type, isNew, fullDescription, headerImage, galleryImages, videoUrl)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null, galleryImages ? JSON.stringify(galleryImages) : null, videoUrl || null],
         function(err) {
           if (err) reject(err)
           else resolve({ id: this.lastID, ...newsData })
@@ -107,13 +115,13 @@ const dbHelpers = {
   // Mettre à jour une actualité
   updateNews: (id, newsData) => {
     return new Promise((resolve, reject) => {
-      const { date, title, description, type, isNew, fullDescription, headerImage, galleryImages } = newsData
+      const { date, title, description, type, isNew, fullDescription, headerImage, galleryImages, videoUrl } = newsData
 
       db.run(
         `UPDATE news
-         SET date = ?, title = ?, description = ?, type = ?, isNew = ?, fullDescription = ?, headerImage = ?, galleryImages = ?
+         SET date = ?, title = ?, description = ?, type = ?, isNew = ?, fullDescription = ?, headerImage = ?, galleryImages = ?, videoUrl = ?
          WHERE id = ?`,
-        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null, galleryImages ? JSON.stringify(galleryImages) : null, id],
+        [date, title, description, type, isNew ? 1 : 0, fullDescription, headerImage || null, galleryImages ? JSON.stringify(galleryImages) : null, videoUrl || null, id],
         function(err) {
           if (err) reject(err)
           else if (this.changes === 0) reject(new Error('Actualité non trouvée'))
