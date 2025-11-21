@@ -35,7 +35,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/news - Créer une actualité (PROTÉGÉ)
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { title, description, type, fullDescription, isNew } = req.body
+    const { title, description, type, fullDescription, isNew, headerImage } = req.body
 
     // Validation
     if (!title || !description || !type || !fullDescription) {
@@ -65,7 +65,8 @@ router.post('/', verifyToken, async (req, res) => {
       description,
       type,
       isNew: isNew !== undefined ? isNew : true,
-      fullDescription
+      fullDescription,
+      headerImage: headerImage || null
     }
 
     const created = await dbHelpers.createNews(newsData)
@@ -81,7 +82,7 @@ router.post('/', verifyToken, async (req, res) => {
 // PUT /api/news/:id - Mettre à jour une actualité (PROTÉGÉ)
 router.put('/:id', verifyToken, async (req, res) => {
   try {
-    const { title, description, type, fullDescription, isNew, date } = req.body
+    const { title, description, type, fullDescription, isNew, date, headerImage } = req.body
 
     // Validation
     if (!title || !description || !type || !fullDescription) {
@@ -110,7 +111,8 @@ router.put('/:id', verifyToken, async (req, res) => {
       description,
       type,
       isNew: isNew !== undefined ? isNew : true,
-      fullDescription
+      fullDescription,
+      headerImage: headerImage || null
     }
 
     const updated = await dbHelpers.updateNews(req.params.id, newsData)
