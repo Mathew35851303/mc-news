@@ -1,8 +1,17 @@
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 
-// Chemin de la base de données
-const DB_PATH = path.join(__dirname, 'database', 'news.db')
+// Chemin de la base de données (utilise /app/data en Docker, sinon ./database localement)
+const DB_DIR = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, 'data')
+  : path.join(__dirname, 'database')
+const DB_PATH = path.join(DB_DIR, 'news.db')
+
+// Créer le dossier s'il n'existe pas
+const fs = require('fs')
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true })
+}
 
 // Créer ou ouvrir la base de données
 const db = new sqlite3.Database(DB_PATH, (err) => {
