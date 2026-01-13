@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mc-news:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mc-news
+    restart: unless-stopped
+    ports:
+      - "3001:3000"  # Port externe:interne (changez 3001 si besoin)
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      # Persistance des données
+      - mc-news-uploads:/app/uploads
+      - mc-news-data:/app/data
+    networks:
+      - mc-news-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mc-news-uploads:
+    name: mc-news-uploads
+  mc-news-data:
+    name: mc-news-data
+
+networks:
+  mc-news-network:
+    name: mc-news-network
