@@ -1,22 +1,152 @@
-# 📡 Documentation API - Serveur d'Actualités
+# API Documentation - MC News
 
-Documentation complète de l'API REST pour gérer les actualités du launcher.
+Documentation complète de l'API REST pour le système de news.
 
-**Base URL** : `https://storage.losnachoschipies.fr` (ou votre domaine)
+**Base URL** : `https://news.losnachoschipies.fr`
 
 ---
 
-## 🔐 Authentification
+## Table des matières
 
-L'API utilise **JWT (JSON Web Tokens)** pour l'authentification des routes protégées.
+- [Authentification](#authentification)
+- [Endpoints publics](#endpoints-publics)
+  - [Health Check](#health-check)
+  - [Liste des news](#liste-des-news)
+  - [Détail d'une news](#détail-dune-news)
+- [Endpoints protégés](#endpoints-protégés)
+  - [Login](#login)
+  - [Créer une news](#créer-une-news)
+  - [Modifier une news](#modifier-une-news)
+  - [Supprimer une news](#supprimer-une-news)
+  - [Upload d'image](#upload-dimage)
+  - [Supprimer une image](#supprimer-une-image)
+- [Modèles de données](#modèles-de-données)
+- [Codes d'erreur](#codes-derreur)
+- [Exemples d'intégration](#exemples-dintégration)
 
-### Login (Connexion Admin)
+---
 
-**Endpoint** : `POST /api/auth/login`
+## Authentification
 
-**Description** : Authentifie l'administrateur et retourne un token JWT.
+Les endpoints protégés nécessitent un token JWT dans le header `Authorization`.
 
-**Corps de la requête** :
+```
+Authorization: Bearer <votre_token>
+```
+
+Pour obtenir un token, utilisez l'endpoint [Login](#login).
+
+---
+
+## Endpoints publics
+
+### Health Check
+
+Vérifie que le serveur est opérationnel.
+
+```
+GET /api/health
+```
+
+**Réponse** `200 OK`
+
+```json
+{
+  "status": "ok",
+  "message": "Serveur d'actualités opérationnel",
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+---
+
+### Liste des news
+
+Récupère toutes les actualités, triées par date de création (plus récentes en premier).
+
+```
+GET /api/news
+```
+
+**Réponse** `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "date": "15 janv. 2024",
+    "title": "Mise à jour 1.2.0",
+    "description": "Nouvelle version disponible",
+    "type": "update",
+    "isNew": true,
+    "fullDescription": "<p>Contenu HTML complet...</p>",
+    "headerImage": "/uploads/news-images/news-123456789.jpg",
+    "galleryImages": [
+      "/uploads/news-images/news-111111111.jpg",
+      "/uploads/news-images/news-222222222.jpg"
+    ],
+    "videoUrl": "https://youtube.com/watch?v=xxxxx",
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
+]
+```
+
+---
+
+### Détail d'une news
+
+Récupère une actualité par son ID.
+
+```
+GET /api/news/:id
+```
+
+**Paramètres URL**
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `id` | integer | ID de la news |
+
+**Réponse** `200 OK`
+
+```json
+{
+  "id": 1,
+  "date": "15 janv. 2024",
+  "title": "Mise à jour 1.2.0",
+  "description": "Nouvelle version disponible",
+  "type": "update",
+  "isNew": true,
+  "fullDescription": "<p>Contenu HTML complet...</p>",
+  "headerImage": "/uploads/news-images/news-123456789.jpg",
+  "galleryImages": [],
+  "videoUrl": null,
+  "createdAt": "2024-01-15T10:30:00.000Z"
+}
+```
+
+**Réponse** `404 Not Found`
+
+```json
+{
+  "error": "Actualité non trouvée"
+}
+```
+
+---
+
+## Endpoints protégés
+
+### Login
+
+Authentifie un administrateur et retourne un token JWT.
+
+```
+POST /api/login
+```
+
+**Body** `application/json`
+
 ```json
 {
   "username": "admin",
@@ -24,597 +154,410 @@ L'API utilise **JWT (JSON Web Tokens)** pour l'authentification des routes prot�
 }
 ```
 
-**Réponse (Succès - 200)** :
+**Réponse** `200 OK`
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "username": "admin"
+  "username": "admin",
+  "message": "Connexion réussie"
 }
 ```
 
-**Réponse (Erreur - 401)** :
+**Réponse** `401 Unauthorized`
+
 ```json
 {
-  "error": "Invalid credentials"
+  "error": "Identifiants incorrects"
 }
 ```
 
-**Exemple cURL** :
-```bash
-curl -X POST https://storage.losnachoschipies.fr/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"votre_mot_de_passe"}'
+---
+
+### Créer une news
+
+Crée une nouvelle actualité.
+
+```
+POST /api/news
 ```
 
-**Exemple JavaScript** :
+**Headers**
+
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body**
+
+```json
+{
+  "title": "Titre de la news",
+  "description": "Description courte (aperçu)",
+  "type": "update",
+  "fullDescription": "<p>Contenu HTML complet de la news...</p>",
+  "isNew": true,
+  "headerImage": "/uploads/news-images/news-123456789.jpg",
+  "galleryImages": [
+    "/uploads/news-images/news-111111111.jpg"
+  ],
+  "videoUrl": "https://youtube.com/watch?v=xxxxx"
+}
+```
+
+**Champs obligatoires**
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `title` | string | Titre de la news |
+| `description` | string | Description courte (aperçu) |
+| `type` | string | Type de news (voir types valides) |
+| `fullDescription` | string | Contenu complet (HTML autorisé) |
+
+**Champs optionnels**
+
+| Champ | Type | Default | Description |
+|-------|------|---------|-------------|
+| `isNew` | boolean | `true` | Badge "Nouveau" affiché |
+| `headerImage` | string | `null` | URL de l'image d'en-tête |
+| `galleryImages` | array | `[]` | URLs des images de galerie |
+| `videoUrl` | string | `null` | URL de vidéo YouTube |
+
+**Types valides**
+
+| Type | Description |
+|------|-------------|
+| `update` | Mise à jour |
+| `event` | Événement |
+| `reset` | Reset/Wipe |
+| `maintenance` | Maintenance |
+| `info` | Information |
+
+**Réponse** `201 Created`
+
+```json
+{
+  "id": 5,
+  "date": "15 janv. 2024",
+  "title": "Titre de la news",
+  "description": "Description courte",
+  "type": "update",
+  "isNew": true,
+  "fullDescription": "<p>Contenu HTML...</p>",
+  "headerImage": null,
+  "galleryImages": [],
+  "videoUrl": null
+}
+```
+
+---
+
+### Modifier une news
+
+Met à jour une actualité existante.
+
+```
+PUT /api/news/:id
+```
+
+**Headers**
+
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Body** (mêmes champs que la création)
+
+```json
+{
+  "title": "Titre modifié",
+  "description": "Description modifiée",
+  "type": "event",
+  "fullDescription": "<p>Nouveau contenu...</p>",
+  "isNew": false,
+  "date": "20 janv. 2024"
+}
+```
+
+**Réponse** `200 OK`
+
+```json
+{
+  "id": 5,
+  "date": "20 janv. 2024",
+  "title": "Titre modifié",
+  ...
+}
+```
+
+---
+
+### Supprimer une news
+
+Supprime une actualité et ses images associées.
+
+```
+DELETE /api/news/:id
+```
+
+**Headers**
+
+```
+Authorization: Bearer <token>
+```
+
+**Réponse** `204 No Content`
+
+(Pas de body)
+
+---
+
+### Upload d'image
+
+Upload une image pour l'utiliser dans une news.
+
+```
+POST /api/upload
+```
+
+**Headers**
+
+```
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Body** `multipart/form-data`
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `image` | file | Fichier image (JPG, PNG, GIF, WebP) |
+
+**Limites**
+- Taille max : 5 MB
+- Formats : JPEG, PNG, GIF, WebP
+
+**Réponse** `200 OK`
+
+```json
+{
+  "success": true,
+  "url": "/uploads/news-images/news-1705312200000-123456789.jpg",
+  "filename": "news-1705312200000-123456789.jpg"
+}
+```
+
+---
+
+### Supprimer une image
+
+Supprime une image uploadée.
+
+```
+DELETE /api/upload/:filename
+```
+
+**Headers**
+
+```
+Authorization: Bearer <token>
+```
+
+**Paramètres URL**
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `filename` | string | Nom du fichier (ex: `news-123456789.jpg`) |
+
+**Réponse** `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Image supprimée avec succès"
+}
+```
+
+---
+
+## Modèles de données
+
+### News
+
+```typescript
+interface News {
+  id: number;              // ID unique
+  date: string;            // Date formatée (ex: "15 janv. 2024")
+  title: string;           // Titre
+  description: string;     // Description courte
+  type: NewsType;          // Type de news
+  isNew: boolean;          // Afficher badge "Nouveau"
+  fullDescription: string; // Contenu HTML complet
+  headerImage: string | null;    // URL image d'en-tête
+  galleryImages: string[];       // URLs images galerie
+  videoUrl: string | null;       // URL vidéo YouTube
+  createdAt: string;       // Date ISO de création
+}
+
+type NewsType = 'update' | 'event' | 'reset' | 'maintenance' | 'info';
+```
+
+---
+
+## Codes d'erreur
+
+| Code | Description |
+|------|-------------|
+| `200` | Succès |
+| `201` | Ressource créée |
+| `204` | Suppression réussie (pas de contenu) |
+| `400` | Requête invalide (champs manquants, type invalide) |
+| `401` | Non authentifié ou token invalide |
+| `404` | Ressource non trouvée |
+| `500` | Erreur serveur |
+
+**Format d'erreur**
+
+```json
+{
+  "error": "Message d'erreur",
+  "required": ["field1", "field2"]  // optionnel
+}
+```
+
+---
+
+## Exemples d'intégration
+
+### JavaScript (Fetch)
+
 ```javascript
-const response = await fetch('https://storage.losnachoschipies.fr/api/auth/login', {
+// Récupérer toutes les news
+const response = await fetch('https://news.losnachoschipies.fr/api/news');
+const news = await response.json();
+
+// Afficher les news
+news.forEach(item => {
+  console.log(`${item.title} - ${item.date}`);
+});
+```
+
+### JavaScript avec authentification
+
+```javascript
+// Login
+const loginResponse = await fetch('https://news.losnachoschipies.fr/api/login', {
   method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
+  headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     username: 'admin',
     password: 'votre_mot_de_passe'
   })
-})
+});
+const { token } = await loginResponse.json();
 
-const data = await response.json()
-const token = data.token
-```
-
----
-
-## 📰 Actualités (News)
-
-### 1. Récupérer toutes les actualités
-
-**Endpoint** : `GET /api/news`
-
-**Description** : Récupère la liste de toutes les actualités (publique, pas besoin d'authentification).
-
-**Paramètres** : Aucun
-
-**Réponse (Succès - 200)** :
-```json
-[
-  {
-    "id": 1,
-    "title": "Mise à jour 1.20.4",
-    "description": "Nouveaux mods et optimisations",
-    "fullDescription": "<p>Salut à tous !</p><h3>Nouveautés</h3><ul><li>Mod Create ajouté</li><li>Optimisations</li></ul>",
-    "type": "update",
-    "isNew": true,
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "updatedAt": "2024-01-15T10:30:00.000Z"
-  },
-  {
-    "id": 2,
-    "title": "Événement PvP",
-    "description": "Tournoi ce weekend !",
-    "fullDescription": "<p>Venez participer au tournoi PvP !</p>",
-    "type": "event",
-    "isNew": false,
-    "createdAt": "2024-01-10T14:00:00.000Z",
-    "updatedAt": "2024-01-10T14:00:00.000Z"
-  }
-]
-```
-
-**Types disponibles** :
-- `update` - Mise à jour
-- `event` - Événement
-- `reset` - Reset
-- `maintenance` - Maintenance
-- `info` - Information
-
-**Exemple cURL** :
-```bash
-curl https://storage.losnachoschipies.fr/api/news
-```
-
-**Exemple JavaScript** :
-```javascript
-const response = await fetch('https://storage.losnachoschipies.fr/api/news')
-const news = await response.json()
-
-// Afficher les actualités
-news.forEach(item => {
-  console.log(`${item.title} - ${item.description}`)
-})
-```
-
-**Exemple pour site web** :
-```html
-<div id="news-container"></div>
-
-<script>
-async function loadNews() {
-  const response = await fetch('https://storage.losnachoschipies.fr/api/news')
-  const news = await response.json()
-
-  const container = document.getElementById('news-container')
-
-  news.forEach(item => {
-    const newsCard = `
-      <div class="news-card">
-        <h3>${item.title}</h3>
-        <p>${item.description}</p>
-        <span class="type">${item.type}</span>
-        ${item.isNew ? '<span class="badge-new">NEW</span>' : ''}
-      </div>
-    `
-    container.innerHTML += newsCard
-  })
-}
-
-loadNews()
-</script>
-```
-
----
-
-### 2. Récupérer une actualité spécifique
-
-**Endpoint** : `GET /api/news/:id`
-
-**Description** : Récupère les détails d'une actualité par son ID.
-
-**Paramètres** :
-- `id` (obligatoire) - ID de l'actualité
-
-**Réponse (Succès - 200)** :
-```json
-{
-  "id": 1,
-  "title": "Mise à jour 1.20.4",
-  "description": "Nouveaux mods et optimisations",
-  "fullDescription": "<p>Contenu HTML complet...</p>",
-  "type": "update",
-  "isNew": true,
-  "createdAt": "2024-01-15T10:30:00.000Z",
-  "updatedAt": "2024-01-15T10:30:00.000Z"
-}
-```
-
-**Réponse (Erreur - 404)** :
-```json
-{
-  "error": "News not found"
-}
-```
-
-**Exemple cURL** :
-```bash
-curl https://storage.losnachoschipies.fr/api/news/1
-```
-
-**Exemple JavaScript** :
-```javascript
-const newsId = 1
-const response = await fetch(`https://storage.losnachoschipies.fr/api/news/${newsId}`)
-const news = await response.json()
-```
-
----
-
-### 3. Créer une actualité (Authentification requise)
-
-**Endpoint** : `POST /api/news`
-
-**Description** : Crée une nouvelle actualité (nécessite un token JWT).
-
-**Headers** :
-```
-Authorization: Bearer <votre_token_jwt>
-Content-Type: application/json
-```
-
-**Corps de la requête** :
-```json
-{
-  "title": "Nouvelle mise à jour !",
-  "description": "Description courte",
-  "fullDescription": "<p>Contenu HTML complet...</p>",
-  "type": "update",
-  "isNew": true
-}
-```
-
-**Champs obligatoires** :
-- `title` (string, max 100 caractères)
-- `description` (string, max 150 caractères)
-- `fullDescription` (string, HTML)
-- `type` (string: `update`, `event`, `reset`, `maintenance`, `info`)
-- `isNew` (boolean)
-
-**Réponse (Succès - 201)** :
-```json
-{
-  "id": 3,
-  "title": "Nouvelle mise à jour !",
-  "description": "Description courte",
-  "fullDescription": "<p>Contenu HTML complet...</p>",
-  "type": "update",
-  "isNew": true,
-  "createdAt": "2024-01-20T12:00:00.000Z",
-  "updatedAt": "2024-01-20T12:00:00.000Z"
-}
-```
-
-**Réponse (Erreur - 401)** :
-```json
-{
-  "error": "Unauthorized"
-}
-```
-
-**Exemple cURL** :
-```bash
-curl -X POST https://storage.losnachoschipies.fr/api/news \
-  -H "Authorization: Bearer votre_token_jwt" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Nouvelle actualité",
-    "description": "Description",
-    "fullDescription": "<p>Contenu...</p>",
-    "type": "info",
-    "isNew": true
-  }'
-```
-
-**Exemple JavaScript** :
-```javascript
-const token = localStorage.getItem('adminToken')
-
-const response = await fetch('https://storage.losnachoschipies.fr/api/news', {
+// Créer une news
+const createResponse = await fetch('https://news.losnachoschipies.fr/api/news', {
   method: 'POST',
   headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
   },
   body: JSON.stringify({
     title: 'Nouvelle actualité',
-    description: 'Description courte',
-    fullDescription: '<p>Contenu complet...</p>',
-    type: 'update',
-    isNew: true
+    description: 'Une super news',
+    type: 'info',
+    fullDescription: '<p>Contenu de la news...</p>'
   })
-})
-
-const newNews = await response.json()
+});
+const newNews = await createResponse.json();
 ```
 
----
+### React (exemple de hook)
 
-### 4. Mettre à jour une actualité (Authentification requise)
-
-**Endpoint** : `PUT /api/news/:id`
-
-**Description** : Met à jour une actualité existante.
-
-**Headers** :
-```
-Authorization: Bearer <votre_token_jwt>
-Content-Type: application/json
-```
-
-**Paramètres** :
-- `id` (obligatoire) - ID de l'actualité à modifier
-
-**Corps de la requête** :
-```json
-{
-  "title": "Titre modifié",
-  "description": "Nouvelle description",
-  "fullDescription": "<p>Nouveau contenu...</p>",
-  "type": "update",
-  "isNew": false
-}
-```
-
-**Réponse (Succès - 200)** :
-```json
-{
-  "id": 1,
-  "title": "Titre modifié",
-  "description": "Nouvelle description",
-  "fullDescription": "<p>Nouveau contenu...</p>",
-  "type": "update",
-  "isNew": false,
-  "createdAt": "2024-01-15T10:30:00.000Z",
-  "updatedAt": "2024-01-20T15:00:00.000Z"
-}
-```
-
-**Réponse (Erreur - 404)** :
-```json
-{
-  "error": "News not found"
-}
-```
-
-**Exemple cURL** :
-```bash
-curl -X PUT https://storage.losnachoschipies.fr/api/news/1 \
-  -H "Authorization: Bearer votre_token_jwt" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Titre modifié",
-    "description": "Description modifiée",
-    "fullDescription": "<p>Contenu modifié...</p>",
-    "type": "update",
-    "isNew": false
-  }'
-```
-
-**Exemple JavaScript** :
 ```javascript
-const token = localStorage.getItem('adminToken')
-const newsId = 1
+import { useState, useEffect } from 'react';
 
-const response = await fetch(`https://storage.losnachoschipies.fr/api/news/${newsId}`, {
-  method: 'PUT',
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    title: 'Titre modifié',
-    description: 'Description modifiée',
-    fullDescription: '<p>Contenu modifié...</p>',
-    type: 'update',
-    isNew: false
-  })
-})
-
-const updatedNews = await response.json()
-```
-
----
-
-### 5. Supprimer une actualité (Authentification requise)
-
-**Endpoint** : `DELETE /api/news/:id`
-
-**Description** : Supprime une actualité.
-
-**Headers** :
-```
-Authorization: Bearer <votre_token_jwt>
-```
-
-**Paramètres** :
-- `id` (obligatoire) - ID de l'actualité à supprimer
-
-**Réponse (Succès - 200)** :
-```json
-{
-  "message": "News deleted successfully"
-}
-```
-
-**Réponse (Erreur - 404)** :
-```json
-{
-  "error": "News not found"
-}
-```
-
-**Exemple cURL** :
-```bash
-curl -X DELETE https://storage.losnachoschipies.fr/api/news/1 \
-  -H "Authorization: Bearer votre_token_jwt"
-```
-
-**Exemple JavaScript** :
-```javascript
-const token = localStorage.getItem('adminToken')
-const newsId = 1
-
-const response = await fetch(`https://storage.losnachoschipies.fr/api/news/${newsId}`, {
-  method: 'DELETE',
-  headers: {
-    'Authorization': `Bearer ${token}`
-  }
-})
-
-const result = await response.json()
-console.log(result.message) // "News deleted successfully"
-```
-
----
-
-## 🏥 Health Check
-
-### Vérifier le statut du serveur
-
-**Endpoint** : `GET /api/health`
-
-**Description** : Vérifie que le serveur fonctionne correctement.
-
-**Réponse (Succès - 200)** :
-```json
-{
-  "status": "ok",
-  "timestamp": "2024-01-20T12:00:00.000Z",
-  "uptime": 123456
-}
-```
-
-**Exemple cURL** :
-```bash
-curl https://storage.losnachoschipies.fr/api/health
-```
-
----
-
-## 📊 Exemples d'utilisation
-
-### Exemple complet : Site web vitrine
-
-```html
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Actualités - Los Nachos</title>
-  <style>
-    .news-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      padding: 20px;
-    }
-
-    .news-card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .news-card h3 {
-      color: #ff6b35;
-      margin-top: 0;
-    }
-
-    .badge-new {
-      background: gold;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    .type-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 12px;
-      color: white;
-      font-size: 12px;
-      margin-top: 10px;
-    }
-
-    .type-update { background: #4CAF50; }
-    .type-event { background: #2196F3; }
-    .type-info { background: #ff6b35; }
-  </style>
-</head>
-<body>
-  <h1>Dernières Actualités</h1>
-  <div id="news" class="news-grid"></div>
-
-  <script>
-    async function loadNews() {
-      try {
-        const response = await fetch('https://storage.losnachoschipies.fr/api/news')
-        const news = await response.json()
-
-        const container = document.getElementById('news')
-
-        news.forEach(item => {
-          const card = document.createElement('div')
-          card.className = 'news-card'
-
-          card.innerHTML = `
-            <h3>
-              ${item.title}
-              ${item.isNew ? '<span class="badge-new">NEW</span>' : ''}
-            </h3>
-            <p>${item.description}</p>
-            <span class="type-badge type-${item.type}">${item.type}</span>
-            <div class="content">${item.fullDescription}</div>
-          `
-
-          container.appendChild(card)
-        })
-      } catch (error) {
-        console.error('Erreur:', error)
-      }
-    }
-
-    loadNews()
-  </script>
-</body>
-</html>
-```
-
-### Exemple : React Component
-
-```jsx
-import React, { useState, useEffect } from 'react'
-
-function NewsList() {
-  const [news, setNews] = useState([])
-  const [loading, setLoading] = useState(true)
+function useNews() {
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('https://storage.losnachoschipies.fr/api/news')
+    fetch('https://news.losnachoschipies.fr/api/news')
       .then(res => res.json())
       .then(data => {
-        setNews(data)
-        setLoading(false)
+        setNews(data);
+        setLoading(false);
       })
-      .catch(error => {
-        console.error('Erreur:', error)
-        setLoading(false)
-      })
-  }, [])
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
 
-  if (loading) return <div>Chargement...</div>
-
-  return (
-    <div className="news-list">
-      {news.map(item => (
-        <div key={item.id} className="news-card">
-          <h3>{item.title}</h3>
-          <p>{item.description}</p>
-          {item.isNew && <span className="badge">NEW</span>}
-          <div dangerouslySetInnerHTML={{ __html: item.fullDescription }} />
-        </div>
-      ))}
-    </div>
-  )
+  return { news, loading, error };
 }
 
-export default NewsList
+// Utilisation
+function NewsList() {
+  const { news, loading, error } = useNews();
+
+  if (loading) return <p>Chargement...</p>;
+  if (error) return <p>Erreur: {error}</p>;
+
+  return (
+    <ul>
+      {news.map(item => (
+        <li key={item.id}>
+          <h3>{item.title}</h3>
+          <p>{item.description}</p>
+          <span>{item.date}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### cURL
+
+```bash
+# Health check
+curl https://news.losnachoschipies.fr/api/health
+
+# Liste des news
+curl https://news.losnachoschipies.fr/api/news
+
+# Login
+curl -X POST https://news.losnachoschipies.fr/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"votre_mot_de_passe"}'
+
+# Créer une news (avec token)
+curl -X POST https://news.losnachoschipies.fr/api/news \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer VOTRE_TOKEN" \
+  -d '{
+    "title": "Test",
+    "description": "Description",
+    "type": "info",
+    "fullDescription": "<p>Contenu</p>"
+  }'
+
+# Upload image
+curl -X POST https://news.losnachoschipies.fr/api/upload \
+  -H "Authorization: Bearer VOTRE_TOKEN" \
+  -F "image=@/chemin/vers/image.jpg"
 ```
 
 ---
 
-## 🔒 Sécurité
+## Notes
 
-- **CORS** : Activé pour permettre les requêtes depuis n'importe quel domaine
-- **Authentication** : JWT obligatoire pour POST, PUT, DELETE
-- **HTTPS** : Toutes les requêtes doivent passer par HTTPS via Cloudflare Tunnel
-- **Rate Limiting** : Recommandé d'implémenter un rate limiting côté serveur
-
----
-
-## 🐛 Codes d'erreur
-
-| Code | Description |
-|------|-------------|
-| 200 | Succès |
-| 201 | Créé avec succès |
-| 400 | Requête invalide |
-| 401 | Non authentifié |
-| 404 | Ressource non trouvée |
-| 500 | Erreur serveur |
-
----
-
-## 📝 Notes importantes
-
-1. **Pas d'authentification pour GET** : Les routes GET sont publiques
-2. **Token JWT** : Expire après 24 heures, reconnectez-vous si nécessaire
-3. **HTML dans fullDescription** : Le contenu HTML est accepté, assurez-vous de le nettoyer côté client si nécessaire
-4. **Dates** : Toutes les dates sont en format ISO 8601 (UTC)
-5. **🗑️ Nettoyage automatique** : Les actualités de plus d'1 mois sont automatiquement supprimées tous les jours au démarrage du serveur
-
----
-
-**URL de base** : `https://storage.losnachoschipies.fr`
-
-**Contact** : Pour toute question, vérifiez les logs du serveur : `pm2 logs news-server`
+- Les news de plus d'1 mois sont automatiquement supprimées
+- Les images sont servies depuis `/uploads/news-images/`
+- Le token JWT expire après un certain temps (reconnexion nécessaire)
+- CORS est activé pour toutes les origines
